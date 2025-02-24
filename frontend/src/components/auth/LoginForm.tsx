@@ -16,36 +16,54 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { authAtom, pageAtom } from "@/atoms/pageAtom";
 import { loginAtom } from "@/atoms/authAtom";
-import { pageAtom } from "@/atoms/pageAtom";
+import api from "@/lib/axios";
 
-// ✅ Define form schema with Zod
+// ✅ Zod Schema for validation
 const LoginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
 export function LoginForm() {
-  const [auth, setAuth] = useAtom(loginAtom);
+  const [userData, setUserData] = useAtom(loginAtom)
+  const [, setWhichPage] = useAtom(pageAtom);
+  const [, setAuth] = useAtom(authAtom);
   const [showPassword, setShowPassword] = useState(false);
-  const [, setWhichPage] = useAtom(pageAtom)
 
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
-    defaultValues: auth,
+    defaultValues: userData,
   });
 
-  function onSubmit(data: z.infer<typeof LoginSchema>) {
-    setAuth(data);
-    toast({
-      title: "Login Successful!",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+  async function onSubmit(data: z.infer<typeof LoginSchema>) {
+    try {
+      const response = await api.post("/auth/login", data);
+      const user = response.data; // Assuming response contains user data
+
+      // Update user state
+      setUserData(user);
+      setAuth({ isAuthenticated: true, user });
+
+      toast({
+        title: "Login Successful!",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+            <code className="text-white">{JSON.stringify(user, null, 2)}</code>
+          </pre>
+        ),
+      });
+    } catch (error) {
+      console.error("Login failed:", error);
+      toast({
+        title: "Login Failed",
+        description: "Invalid email or password",
+        type: "error"
+      });
+    }
   }
+
 
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -74,7 +92,7 @@ export function LoginForm() {
               )}
             />
 
-            {/* Password Field with Animated Reveal */}
+            {/* Password Field */}
             <FormField
               control={form.control}
               name="password"
@@ -83,7 +101,6 @@ export function LoginForm() {
                   <FormLabel className="text-gray-300">Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      {/* Password Input */}
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
@@ -91,10 +108,10 @@ export function LoginForm() {
                         className="bg-gray-800 text-white border-none focus:ring-2 focus:ring-blue-400 selection:bg-blue-600 pr-10 transition-all"
                       />
 
-                      {/* Eye Open/Close Animation */}
+                      {/* Toggle Password Visibility */}
                       <button
                         type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 flex items-center justify-center w-6 h-6"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
                         onClick={() => setShowPassword((prev) => !prev)}
                       >
                         {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
@@ -106,10 +123,7 @@ export function LoginForm() {
               )}
             />
 
-            <Button
-              type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded"
-            >
+            <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded">
               Login
             </Button>
 

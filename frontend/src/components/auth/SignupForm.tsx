@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { pageAtom } from "@/atoms/pageAtom";
 import { signupAtom } from "@/atoms/authAtom";
+import api from "@/lib/axios";
 
 // ✅ Define Signup Form Schema with Zod
 const SignupSchema = z
@@ -42,19 +43,29 @@ export function SignupForm() {
     defaultValues: auth,
   });
 
-  function onSubmit(data: z.infer<typeof SignupSchema>) {
+  async function onSubmit(data: z.infer<typeof SignupSchema>) {
     setAuth(data)
-    toast({
-      title: "Signup Successful!",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+    try {
+      await api.post("/api/auth/signup", auth);
 
-    setWhichPage("Login"); // Redirect to login page after signup
+      toast({
+        title: "Signup Successful!",
+        description: "Your account has been created. Please log in.",
+        type: "success",
+      });
+
+      setWhichPage("Login"); // ✅ Redirect to login page after success
+    } catch (error) {
+      console.error("Signup error:", error);
+
+      toast({
+        title: "Signup Failed!",
+        description: "An error occurred. Please try again.",
+        type: "error",
+      });
+    }
   }
+
 
   return (
     <div className="flex items-center justify-center min-h-screen">
