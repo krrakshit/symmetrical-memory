@@ -16,8 +16,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { authAtom } from "@/atoms/authAtom";
-import { SignupForm } from "./SignupForm";
+import { loginAtom } from "@/atoms/authAtom";
+import { pageAtom } from "@/atoms/pageAtom";
 
 // ✅ Define form schema with Zod
 const LoginSchema = z.object({
@@ -26,9 +26,9 @@ const LoginSchema = z.object({
 });
 
 export function LoginForm() {
-  const [auth, setAuth] = useAtom(authAtom);
+  const [auth, setAuth] = useAtom(loginAtom);
   const [showPassword, setShowPassword] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
+  const [, setWhichPage] = useAtom(pageAtom)
 
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
@@ -45,10 +45,6 @@ export function LoginForm() {
         </pre>
       ),
     });
-  }
-
-  if (showSignup) {
-    return <SignupForm onBack={() => setShowSignup(false)} />; // Show Signup Form
   }
 
   return (
@@ -122,7 +118,7 @@ export function LoginForm() {
               Don't have an account?{" "}
               <button
                 type="button"
-                onClick={() => setShowSignup(true)}
+                onClick={() => setWhichPage("Signup")}
                 className="text-blue-400 hover:underline"
               >
                 Sign up
