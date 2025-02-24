@@ -1,13 +1,12 @@
-import { Button } from "./components/ui/button"
+import { Toaster } from "sonner"
+import { LoginForm } from "./components/auth/LoginForm"
 
 const App = () => {
   return (
-    <>
-      <h1 className="text-3xl bg-orange-400 font-bold underline">
-        Hello world!
-      </h1>
-      <Button className="bg-orange-400">Click me</Button>
-    </>
+    <div className="bg-[#09090B]">
+      <Toaster position="top-center" />
+      <LoginForm />
+    </div>
   )
 }
 
