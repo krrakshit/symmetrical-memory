@@ -6,6 +6,7 @@ import type { Request, Response } from "express";
 // Signup Function (unchanged)
 export const signup = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log(req);
     const { fullName, email, password } = req.body;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });

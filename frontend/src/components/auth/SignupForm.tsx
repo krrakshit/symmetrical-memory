@@ -46,7 +46,7 @@ export function SignupForm() {
   async function onSubmit(data: z.infer<typeof SignupSchema>) {
     setAuth(data)
     try {
-      await api.post("/api/auth/signup", auth);
+      await api.post("/auth/signup", auth);
 
       toast({
         title: "Signup Successful!",
