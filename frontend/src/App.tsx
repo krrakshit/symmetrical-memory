@@ -3,6 +3,7 @@ import { LoginForm } from "./components/auth/LoginForm"
 import { useAtom } from "jotai"
 import { pageAtom } from "./atoms/pageAtom"
 import { SignupForm } from "./components/auth/SignupForm"
+import Dashboard from "./components/dashboard/dashboard"
 
 const App = () => {
   const [whichPage] = useAtom(pageAtom)
@@ -15,10 +16,10 @@ const App = () => {
     case "Signup":
       PageComponent = <SignupForm />;
       break;
-    //case "Dashboard":
-    //PageComponent = <Dashboard />;
-    //break;
-    default:
+      case "Dashboard":
+     PageComponent = <Dashboard />;
+     break
+     default:
       PageComponent = <LoginForm />;
   }
 

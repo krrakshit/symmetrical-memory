@@ -165,7 +165,7 @@ export function SignupForm() {
 
             <Button
               type="submit"
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded"
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded cursor-pointer"
             >
               Sign Up
             </Button>
@@ -176,7 +176,7 @@ export function SignupForm() {
               <button
                 type="button"
                 onClick={() => setWhichPage("Login")}
-                className="text-green-400 hover:underline"
+                className="text-green-400 hover:underline cursor-pointer"
               >
                 Log in
               </button>

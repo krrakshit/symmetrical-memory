@@ -123,7 +123,7 @@ export function LoginForm() {
               )}
             />
 
-            <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded">
+            <Button type="submit" onClick={() => setWhichPage("Dashboard")} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded">
               Login
             </Button>
 
