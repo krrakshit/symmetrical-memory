@@ -107,8 +107,6 @@ export function LoginForm() {
                         {...field}
                         className="bg-gray-800 text-white border-none focus:ring-2 focus:ring-blue-400 selection:bg-blue-600 pr-10 transition-all"
                       />
-
-                      {/* Toggle Password Visibility */}
                       <button
                         type="button"
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
