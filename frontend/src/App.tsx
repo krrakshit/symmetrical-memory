@@ -3,7 +3,7 @@ import { LoginForm } from "./components/auth/LoginForm"
 import { useAtom } from "jotai"
 import { pageAtom } from "./atoms/pageAtom"
 import { SignupForm } from "./components/auth/SignupForm"
-import Dashboard from "./components/dashboard/dashboard"
+import Dashboard from "./components/dashboard/Dashboard"
 import { useState, useEffect } from "react";
 import Loader from "./components/loaders/loader"
 

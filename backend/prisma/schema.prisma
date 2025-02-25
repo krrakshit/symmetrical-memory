@@ -19,4 +19,50 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+
+  organizations Organization[] @relation("UserOrganizations") // Organizations created by user
+  memberships   Membership[]   @relation("UserMemberships") // Organizations user has joined
+  tasks         Task[]         @relation("AssignedTasks") // Tasks assigned to user
+  Task          Task[]
+}
+
+model Organization {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  joinCode    String   @unique // Random code for joining
+  createdBy   String   @db.ObjectId // User who created this org
+  createdAt   DateTime @default(now())
+
+  owner   User         @relation("UserOrganizations", fields: [createdBy], references: [id])
+  members Membership[] @relation("OrganizationMemberships") // Users who joined
+  tasks   Task[]       @relation("OrganizationTasks") // Tasks in this org
+}
+
+model Membership {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String   @db.ObjectId
+  orgId    String   @db.ObjectId
+  joinedAt DateTime @default(now())
+
+  user User         @relation("UserMemberships", fields: [userId], references: [id])
+  org  Organization @relation("OrganizationMemberships", fields: [orgId], references: [id])
+
+  @@unique([userId, orgId]) // Prevent duplicate memberships
+}
+
+model Task {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  status      String   @default("pending") // "pending", "in-progress", "completed"
+  orgId       String   @db.ObjectId // Associated organization
+  assignedTo  String?  @db.ObjectId // The user assigned to this task (nullable)
+  createdBy   String   @db.ObjectId // Creator of the task (should be the org owner)
+  createdAt   DateTime @default(now())
+  dueAt       DateTime
+
+  organization Organization @relation("OrganizationTasks", fields: [orgId], references: [id])
+  assignee     User?        @relation("AssignedTasks", fields: [assignedTo], references: [id])
+  creator      User         @relation(fields: [createdBy], references: [id])
 }
