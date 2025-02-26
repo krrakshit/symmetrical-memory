@@ -1,37 +1,29 @@
 // backend/src/controllers/organization.controller.ts
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-import { generateJoinCode } from "../utils/generateCode";
+import { generateUniqueInviteCode } from "../utils/inviteCode";
 
 // Create a new organization
-export const createOrganization = async (req: Request, res: Response) => {
+export const createOrganization = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { name, description } = req.body;
-
     if (!name) {
-      return res.status(400).json({ message: "Organization name is required" });
+      res.status(400).json({ message: "Organization name is required" });
+      return;
     }
 
-    // Generate a unique join code
-    let joinCode = generateJoinCode();
-    let existingOrg = await prisma.organization.findUnique({
-      where: { joinCode },
-    });
+    // Generate a unique invite code
+    const inviteCode = await generateUniqueInviteCode();
 
-    // Ensure the join code is unique
-    while (existingOrg) {
-      joinCode = generateJoinCode();
-      existingOrg = await prisma.organization.findUnique({
-        where: { joinCode },
-      });
-    }
-
-    // Create the organization
+    // Create organization
     const organization = await prisma.organization.create({
       data: {
         name,
         description,
-        joinCode,
+        inviteCode,
         createdBy: req.user!.id,
       },
     });
@@ -46,31 +38,45 @@ export const createOrganization = async (req: Request, res: Response) => {
   }
 };
 
-// Get all organizations for current user
-export const getOrganizations = async (req: Request, res: Response) => {
+// Get all organizations for the current user
+export const getOrganizations = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
-    // Organizations created by the user
+    // Get organizations created by the user
     const ownedOrganizations = await prisma.organization.findMany({
-      where: { createdBy: req.user!.id },
+      where: {
+        createdBy: req.user!.id,
+      },
     });
 
-    // Organizations the user is a member of
+    // Get organizations where the user is a member
     const memberships = await prisma.membership.findMany({
-      where: { userId: req.user!.id },
-      include: { org: true },
+      where: {
+        userId: req.user!.id,
+      },
+      include: {
+        org: true, // Changed from organization to org to match schema relation name
+      },
     });
 
-    const memberOrganizations = memberships.map((membership) => membership.org);
+    const memberOrganizations = memberships.map((m) => ({
+      ...m.org, // Changed from m.organization to m.org
+      joinedAt: m.joinedAt,
+    }));
 
-    // Combine and deduplicate (in case a user is both owner and member)
-    const allOrganizations = [...ownedOrganizations];
-
-    // Add member organizations that are not also owned
-    for (const org of memberOrganizations) {
-      if (!allOrganizations.some((ownedOrg) => ownedOrg.id === org.id)) {
-        allOrganizations.push(org);
-      }
-    }
+    // Combine both lists and mark ownership
+    const allOrganizations = [
+      ...ownedOrganizations.map((org) => ({
+        ...org,
+        isOwner: true,
+      })),
+      ...memberOrganizations.map((org) => ({
+        ...org,
+        isOwner: false,
+      })),
+    ];
 
     res.json({ organizations: allOrganizations });
   } catch (error) {
@@ -80,16 +86,26 @@ export const getOrganizations = async (req: Request, res: Response) => {
 };
 
 // Get organization by ID
-export const getOrganizationById = async (req: Request, res: Response) => {
+export const getOrganizationById = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { orgId } = req.params;
 
     const organization = await prisma.organization.findUnique({
       where: { id: orgId },
       include: {
-        members: {
+        tasks: {
           include: {
-            user: {
+            assignee: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+            creator: {
               select: {
                 id: true,
                 fullName: true,
@@ -98,25 +114,54 @@ export const getOrganizationById = async (req: Request, res: Response) => {
             },
           },
         },
-        tasks: {
-          orderBy: { createdAt: "desc" },
-          take: 5,
+        owner: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
         },
       },
     });
 
     if (!organization) {
-      return res.status(404).json({ message: "Organization not found" });
+      res.status(404).json({ message: "Organization not found" });
+      return;
     }
 
-    // Check if current user is the owner
+    // Add the isOwner flag
     const isOwner = organization.createdBy === req.user!.id;
+
+    // Get task statistics
+    const pendingTasks = organization.tasks.filter(
+      (task) => task.status === "pending",
+    ).length;
+    const inProgressTasks = organization.tasks.filter(
+      (task) => task.status === "in-progress",
+    ).length;
+    const completedTasks = organization.tasks.filter(
+      (task) => task.status === "completed",
+    ).length;
+
+    // Get member count
+    const memberCount = await prisma.membership.count({
+      where: { orgId },
+    });
+
+    // Include owner in total members
+    const totalMembers = memberCount + 1;
 
     res.json({
       organization: {
         ...organization,
-        joinCode: isOwner ? organization.joinCode : undefined, // Only show join code to owner
         isOwner,
+        stats: {
+          pendingTasks,
+          inProgressTasks,
+          completedTasks,
+          totalTasks: organization.tasks.length,
+          memberCount: totalMembers,
+        },
       },
     });
   } catch (error) {
@@ -126,23 +171,33 @@ export const getOrganizationById = async (req: Request, res: Response) => {
 };
 
 // Update organization
-export const updateOrganization = async (req: Request, res: Response) => {
+export const updateOrganization = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { orgId } = req.params;
-    const { name, description } = req.body;
+    const { name, description, refreshInviteCode } = req.body;
 
+    // Build update data
     const updateData: any = {};
     if (name) updateData.name = name;
     if (description !== undefined) updateData.description = description;
 
-    const organization = await prisma.organization.update({
+    // If requested, generate a new invite code
+    if (refreshInviteCode) {
+      updateData.inviteCode = await generateUniqueInviteCode();
+    }
+
+    // Update organization
+    const updatedOrganization = await prisma.organization.update({
       where: { id: orgId },
       data: updateData,
     });
 
     res.json({
       message: "Organization updated successfully",
-      organization,
+      organization: updatedOrganization,
     });
   } catch (error) {
     console.error("Update Organization Error:", error);
@@ -151,21 +206,25 @@ export const updateOrganization = async (req: Request, res: Response) => {
 };
 
 // Delete organization
-export const deleteOrganization = async (req: Request, res: Response) => {
+export const deleteOrganization = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { orgId } = req.params;
 
-    // Delete all memberships
-    await prisma.membership.deleteMany({
-      where: { orgId },
-    });
-
-    // Delete all tasks
+    // Delete related records (Prisma doesn't cascade automatically)
+    // First delete tasks
     await prisma.task.deleteMany({
       where: { orgId },
     });
 
-    // Delete the organization
+    // Delete memberships
+    await prisma.membership.deleteMany({
+      where: { orgId },
+    });
+
+    // Finally delete the organization
     await prisma.organization.delete({
       where: { id: orgId },
     });
@@ -177,31 +236,30 @@ export const deleteOrganization = async (req: Request, res: Response) => {
   }
 };
 
-// Join organization with join code
-export const joinOrganization = async (req: Request, res: Response) => {
+// Join organization using invite code
+export const joinOrganization = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
-    const { joinCode } = req.body;
+    const { inviteCode } = req.body;
 
-    if (!joinCode) {
-      return res.status(400).json({ message: "Join code is required" });
+    if (!inviteCode) {
+      res.status(400).json({ message: "Invite code is required" });
+      return;
     }
 
-    // Find organization with the provided join code
-    const organization = await prisma.organization.findUnique({
-      where: { joinCode },
+    // Find organization with the provided invite code
+    const organization = await prisma.organization.findFirst({
+      where: { inviteCode },
     });
 
     if (!organization) {
-      return res.status(404).json({ message: "Invalid join code" });
+      res.status(404).json({ message: "Invalid invite code" });
+      return;
     }
 
-    // Check if user is already a member or owner
-    if (organization.createdBy === req.user!.id) {
-      return res
-        .status(400)
-        .json({ message: "You are already the owner of this organization" });
-    }
-
+    // Check if user is already a member
     const existingMembership = await prisma.membership.findUnique({
       where: {
         userId_orgId: {
@@ -211,10 +269,14 @@ export const joinOrganization = async (req: Request, res: Response) => {
       },
     });
 
-    if (existingMembership) {
-      return res
+    // Check if user is the owner
+    const isOwner = organization.createdBy === req.user!.id;
+
+    if (existingMembership || isOwner) {
+      res
         .status(400)
         .json({ message: "You are already a member of this organization" });
+      return;
     }
 
     // Create membership
@@ -222,16 +284,13 @@ export const joinOrganization = async (req: Request, res: Response) => {
       data: {
         userId: req.user!.id,
         orgId: organization.id,
+        joinedAt: new Date(),
       },
     });
 
-    res.json({
+    res.status(201).json({
       message: "Successfully joined organization",
-      organization: {
-        id: organization.id,
-        name: organization.name,
-        description: organization.description,
-      },
+      organization,
     });
   } catch (error) {
     console.error("Join Organization Error:", error);

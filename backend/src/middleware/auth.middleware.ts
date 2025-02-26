@@ -20,7 +20,7 @@ export const authenticateUser = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     // Check for token in Authorization header
     const authHeader = req.headers.authorization;
@@ -34,7 +34,8 @@ export const authenticateUser = async (
     }
 
     if (!token) {
-      return res.status(401).json({ message: "Authentication required" });
+      res.status(401).json({ message: "Authentication required" });
+      return;
     }
 
     // Verify token
@@ -49,32 +50,35 @@ export const authenticateUser = async (
     });
 
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      res.status(401).json({ message: "User not found" });
+      return;
     }
 
     // Attach user to request object
     req.user = user;
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 
-// Check if user is organization member
+// Apply the same fixes to these middlewares
 export const isOrgMember = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
+      res.status(401).json({ message: "Authentication required" });
+      return;
     }
 
     const orgId = req.params.orgId || req.body.orgId;
 
     if (!orgId) {
-      return res.status(400).json({ message: "Organization ID required" });
+      res.status(400).json({ message: "Organization ID required" });
+      return;
     }
 
     // Check if user is a member or owner
@@ -95,9 +99,8 @@ export const isOrgMember = async (
     });
 
     if (!membership && !isOwner) {
-      return res
-        .status(403)
-        .json({ message: "Not a member of this organization" });
+      res.status(403).json({ message: "Not a member of this organization" });
+      return;
     }
 
     next();
@@ -106,21 +109,22 @@ export const isOrgMember = async (
   }
 };
 
-// Check if user is organization owner
 export const isOrgOwner = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
+      res.status(401).json({ message: "Authentication required" });
+      return;
     }
 
     const orgId = req.params.orgId || req.body.orgId;
 
     if (!orgId) {
-      return res.status(400).json({ message: "Organization ID required" });
+      res.status(400).json({ message: "Organization ID required" });
+      return;
     }
 
     const org = await prisma.organization.findFirst({
@@ -131,9 +135,10 @@ export const isOrgOwner = async (
     });
 
     if (!org) {
-      return res
+      res
         .status(403)
         .json({ message: "Only organization owner can perform this action" });
+      return;
     }
 
     next();

@@ -1,9 +1,12 @@
-// backend/src/controllers/membership.controller.ts (continued)
+// backend/src/controllers/membership.controller.ts
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 
 // Get members of an organization
-export const getOrganizationMembers = async (req: Request, res: Response) => {
+export const getOrganizationMembers = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { orgId } = req.params;
 
@@ -25,9 +28,8 @@ export const getOrganizationMembers = async (req: Request, res: Response) => {
     });
 
     if (!isMember && !isOwner) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to view members" });
+      res.status(403).json({ message: "Not authorized to view members" });
+      return;
     }
 
     // Get the organization owner
@@ -45,7 +47,8 @@ export const getOrganizationMembers = async (req: Request, res: Response) => {
     });
 
     if (!organization) {
-      return res.status(404).json({ message: "Organization not found" });
+      res.status(404).json({ message: "Organization not found" });
+      return;
     }
 
     // Get members
@@ -85,7 +88,10 @@ export const getOrganizationMembers = async (req: Request, res: Response) => {
 };
 
 // Remove member from organization
-export const removeMember = async (req: Request, res: Response) => {
+export const removeMember = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { orgId, userId } = req.params;
 
@@ -100,9 +106,10 @@ export const removeMember = async (req: Request, res: Response) => {
     });
 
     if (!membership) {
-      return res
+      res
         .status(404)
         .json({ message: "Member not found in this organization" });
+      return;
     }
 
     // Remove membership
