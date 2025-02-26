@@ -3,14 +3,17 @@ import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 
 // Create a new task
-export const createTask = async (req: Request, res: Response) => {
+export const createTask = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { title, description, orgId, assignedTo, dueAt } = req.body;
-
     if (!title || !orgId || !dueAt) {
-      return res
-        .status(400)
-        .json({ message: "Title, organization ID, and due date are required" });
+      res.status(400).json({
+        message: "Title, organization ID, and due date are required",
+      });
+      return;
     }
 
     // Verify user is a member of the organization
@@ -31,9 +34,8 @@ export const createTask = async (req: Request, res: Response) => {
     });
 
     if (!isOwner && !isMember) {
-      return res
-        .status(403)
-        .json({ message: "Not a member of this organization" });
+      res.status(403).json({ message: "Not a member of this organization" });
+      return;
     }
 
     // If assignedTo is provided, verify that user is a member
@@ -55,9 +57,10 @@ export const createTask = async (req: Request, res: Response) => {
       });
 
       if (!assigneeIsMember && !isOrgOwner) {
-        return res.status(400).json({
+        res.status(400).json({
           message: "Assigned user is not a member of this organization",
         });
+        return;
       }
     }
 
@@ -107,14 +110,13 @@ export const createTask = async (req: Request, res: Response) => {
 };
 
 // Get tasks for an organization
-export const getTasks = async (req: Request, res: Response) => {
+export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {
     const { orgId } = req.params;
     const { status, assignedTo } = req.query;
 
     // Build filter conditions
     const where: any = { orgId };
-
     if (status) {
       where.status = status;
     }
@@ -157,10 +159,12 @@ export const getTasks = async (req: Request, res: Response) => {
 };
 
 // Get task by ID
-export const getTaskById = async (req: Request, res: Response) => {
+export const getTaskById = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { taskId } = req.params;
-
     const task = await prisma.task.findUnique({
       where: { id: taskId },
       include: {
@@ -188,7 +192,8 @@ export const getTaskById = async (req: Request, res: Response) => {
     });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      res.status(404).json({ message: "Task not found" });
+      return;
     }
 
     // Verify user has access to this task
@@ -209,9 +214,8 @@ export const getTaskById = async (req: Request, res: Response) => {
     });
 
     if (!isOrgOwner && !isOrgMember) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to view this task" });
+      res.status(403).json({ message: "Not authorized to view this task" });
+      return;
     }
 
     res.json({ task });
@@ -222,7 +226,10 @@ export const getTaskById = async (req: Request, res: Response) => {
 };
 
 // Update task
-export const updateTask = async (req: Request, res: Response) => {
+export const updateTask = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { taskId } = req.params;
     const { title, description, dueAt } = req.body;
@@ -234,7 +241,8 @@ export const updateTask = async (req: Request, res: Response) => {
     });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      res.status(404).json({ message: "Task not found" });
+      return;
     }
 
     // Check if user is authorized to update this task
@@ -242,9 +250,8 @@ export const updateTask = async (req: Request, res: Response) => {
     const isTaskCreator = task.createdBy === req.user!.id;
 
     if (!isOrgOwner && !isTaskCreator) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to update this task" });
+      res.status(403).json({ message: "Not authorized to update this task" });
+      return;
     }
 
     // Update data
@@ -292,7 +299,10 @@ export const updateTask = async (req: Request, res: Response) => {
 };
 
 // Delete task
-export const deleteTask = async (req: Request, res: Response) => {
+export const deleteTask = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { taskId } = req.params;
 
@@ -303,7 +313,8 @@ export const deleteTask = async (req: Request, res: Response) => {
     });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      res.status(404).json({ message: "Task not found" });
+      return;
     }
 
     // Check if user is authorized to delete this task
@@ -311,9 +322,8 @@ export const deleteTask = async (req: Request, res: Response) => {
     const isTaskCreator = task.createdBy === req.user!.id;
 
     if (!isOrgOwner && !isTaskCreator) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to delete this task" });
+      res.status(403).json({ message: "Not authorized to delete this task" });
+      return;
     }
 
     // Delete task
@@ -329,7 +339,10 @@ export const deleteTask = async (req: Request, res: Response) => {
 };
 
 // Assign task to user
-export const assignTask = async (req: Request, res: Response) => {
+export const assignTask = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { taskId } = req.params;
     const { assignedTo } = req.body;
@@ -341,7 +354,8 @@ export const assignTask = async (req: Request, res: Response) => {
     });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      res.status(404).json({ message: "Task not found" });
+      return;
     }
 
     // Check if user is authorized to assign this task
@@ -349,9 +363,8 @@ export const assignTask = async (req: Request, res: Response) => {
     const isTaskCreator = task.createdBy === req.user!.id;
 
     if (!isOrgOwner && !isTaskCreator) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to assign this task" });
+      res.status(403).json({ message: "Not authorized to assign this task" });
+      return;
     }
 
     // If assignedTo is provided, verify that user is a member
@@ -373,9 +386,10 @@ export const assignTask = async (req: Request, res: Response) => {
       });
 
       if (!assigneeIsMember && !isAssigneeOrgOwner) {
-        return res.status(400).json({
+        res.status(400).json({
           message: "Assigned user is not a member of this organization",
         });
+        return;
       }
     }
 
@@ -418,13 +432,17 @@ export const assignTask = async (req: Request, res: Response) => {
 };
 
 // Update task status
-export const updateTaskStatus = async (req: Request, res: Response) => {
+export const updateTaskStatus = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { taskId } = req.params;
     const { status } = req.body;
 
     if (!status || !["pending", "in-progress", "completed"].includes(status)) {
-      return res.status(400).json({ message: "Valid status is required" });
+      res.status(400).json({ message: "Valid status is required" });
+      return;
     }
 
     // Get the task
@@ -434,7 +452,8 @@ export const updateTaskStatus = async (req: Request, res: Response) => {
     });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      res.status(404).json({ message: "Task not found" });
+      return;
     }
 
     // Check if user is authorized to update this task
@@ -443,9 +462,10 @@ export const updateTaskStatus = async (req: Request, res: Response) => {
     const isAssignee = task.assignedTo === req.user!.id;
 
     if (!isOrgOwner && !isTaskCreator && !isAssignee) {
-      return res
+      res
         .status(403)
         .json({ message: "Not authorized to update this task status" });
+      return;
     }
 
     // Update task status

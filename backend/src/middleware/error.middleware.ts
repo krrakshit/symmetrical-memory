@@ -6,23 +6,25 @@ export const errorHandler = (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): void => {
   console.error(err.stack);
 
   // Handle Prisma errors specifically
   if (err.name === "PrismaClientKnownRequestError") {
-    return res.status(400).json({
+    res.status(400).json({
       message: "Database error",
       error: err.message,
     });
+    return;
   }
 
   // Handle validation errors
   if (err.name === "ValidationError") {
-    return res.status(400).json({
+    res.status(400).json({
       message: "Validation error",
       error: err.message,
     });
+    return;
   }
 
   // Default error response

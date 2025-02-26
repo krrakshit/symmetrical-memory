@@ -2,9 +2,13 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 
 // Get user profile
-export const getUserProfile = async (req: Request, res: Response) => {
+export const getUserProfile = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
@@ -17,7 +21,8 @@ export const getUserProfile = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "User not found" });
+      return;
     }
 
     res.json({ user });
@@ -28,13 +33,15 @@ export const getUserProfile = async (req: Request, res: Response) => {
 };
 
 // Update user profile
-export const updateUserProfile = async (req: Request, res: Response) => {
+export const updateUserProfile = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { fullName, email, currentPassword, newPassword } = req.body;
 
     // Prepare update data
     const updateData: any = {};
-
     if (fullName) updateData.fullName = fullName;
     if (email) updateData.email = email;
 
@@ -47,17 +54,18 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       });
 
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        res.status(404).json({ message: "User not found" });
+        return;
       }
 
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
         user.password,
       );
+
       if (!isPasswordValid) {
-        return res
-          .status(400)
-          .json({ message: "Current password is incorrect" });
+        res.status(400).json({ message: "Current password is incorrect" });
+        return;
       }
 
       // Hash new password
@@ -81,8 +89,12 @@ export const updateUserProfile = async (req: Request, res: Response) => {
     console.error("Update Profile Error:", error);
 
     // Handle unique constraint violations
-    if (error.code === "P2002") {
-      return res.status(400).json({ message: "Email already in use" });
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      res.status(400).json({ message: "Email already in use" });
+      return;
     }
 
     res.status(500).json({ message: "Error updating profile" });
@@ -90,7 +102,10 @@ export const updateUserProfile = async (req: Request, res: Response) => {
 };
 
 // Get user statistics
-export const getUserStats = async (req: Request, res: Response) => {
+export const getUserStats = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     // Get user's organizations (both owned and joined)
     const ownedOrgs = await prisma.organization.count({
