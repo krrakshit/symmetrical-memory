@@ -1,3 +1,4 @@
+//frontend/src/App.tsx
 import { Toaster } from "sonner"
 import { LoginForm } from "./components/auth/LoginForm"
 import { useAtom } from "jotai"

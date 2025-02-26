@@ -1,3 +1,4 @@
+//frontend/src/components/dashboard/Organizations.tsx
 import { motion } from "framer-motion"
 import { Plus } from "lucide-react"
 import { Button } from "../ui/button"

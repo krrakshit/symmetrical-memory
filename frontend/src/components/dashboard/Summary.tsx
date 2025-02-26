@@ -1,4 +1,4 @@
-// Summary.tsx (rename to Home.tsx if desired)
+//frontend/src/components/dashboard/Summary.tsx
 import { motion } from "framer-motion";
 import { Users, CheckSquare, Star, Plus, UserPlus } from "lucide-react";
 import { Button } from "../ui/button";

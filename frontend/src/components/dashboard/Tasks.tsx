@@ -1,5 +1,4 @@
-"use client"
-
+//frontend/src/components/dashboard/Tasks.tsx
 import { motion } from "framer-motion"
 import { CheckCircle, Circle, Clock } from "lucide-react"
 

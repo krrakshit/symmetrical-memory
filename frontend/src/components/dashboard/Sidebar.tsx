@@ -1,3 +1,4 @@
+//frontend/src/components/dashboard/Sidebar.tsx
 import { Home, Users, CheckSquare, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";

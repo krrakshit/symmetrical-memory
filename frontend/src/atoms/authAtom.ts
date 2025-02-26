@@ -1,3 +1,4 @@
+//frontend/src/atoms/authAtom.ts
 import { atom } from "jotai";
 
 // Basic login state
