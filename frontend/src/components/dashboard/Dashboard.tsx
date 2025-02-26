@@ -9,22 +9,50 @@ import Tasks from "./Tasks";
 import Profile from "./Profile";
 
 import { useAtom } from "jotai";
-import { loginAtom } from "@/atoms/authAtom";
+import { userProfileAtom } from "@/atoms/authAtom";
 
 type View = "summary" | "organizations" | "tasks" | "profile";
 
 export default function Dashboard() {
-  const [view, setView] = useState<View>("summary"); // State to track active view
-  const [user] = useAtom(loginAtom);
+  const [view, setView] = useState<View>("summary");
+  const [userProfile, setUserProfile] = useAtom(userProfileAtom);
 
+  // You can use userProfile.stats to display statistics
+  // and userProfile.recentActivity to show recent activities
+
+  // Example: When fetching user data from API
   useEffect(() => {
-    // Fetch user data here if not already in the atom
-  }, []);
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/user/profile');
+        const data = await response.json();
+
+        setUserProfile({
+          id: data.id,
+          fullName: data.fullName,
+          email: data.email,
+          createdAt: data.createdAt,
+          stats: {
+            totalOrganizations: data.stats.totalOrganizations,
+            totalTasks: data.stats.totalTasks,
+            pendingTasks: data.stats.pendingTasks,
+            completedTasks: data.stats.completedTasks,
+            inProgressTasks: data.stats.inProgressTasks,
+          },
+          recentActivity: data.recentActivity,
+        });
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [setUserProfile]);
 
   const renderView = () => {
     switch (view) {
       case "summary":
-        return <Summary />;
+        return <Summary user={userProfile ?? { fullName: "User" }} />;
       case "organizations":
         return <Organizations />;
       case "tasks":
@@ -32,17 +60,16 @@ export default function Dashboard() {
       case "profile":
         return <Profile />;
       default:
-        return <Summary />;
+        return <Summary user={userProfile ?? { fullName: "User" }} />;
     }
   };
 
   return (
     <div className="flex h-screen bg-[#09090b] text-gray-100">
-      {/* Pass `view` as `currentView` to Sidebar */}
       <Sidebar setView={setView} currentView={view} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header user={user ?? { fullName: "User" }} />
+        <Header />
 
         <motion.main
           className="flex-1 overflow-x-hidden overflow-y-auto bg-[#212121] p-6"

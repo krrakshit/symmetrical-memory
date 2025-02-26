@@ -1,14 +1,8 @@
 import { Bell, Settings, LogOut } from "lucide-react";
-
 import { motion } from "framer-motion";
-
 import { Button } from "../ui/button";
 
-interface HeaderProps {
-  user: { fullName: string };
-}
-
-export default function Header({ user }: HeaderProps) {
+export default function Header() {
   const handleLogout = () => {
     // Logic for logout functionality
     console.log("User logged out");
@@ -42,11 +36,6 @@ export default function Header({ user }: HeaderProps) {
           <Settings className="h-5 w-5" />
         </Button>
 
-        {/* Welcome Text */}
-        <div className="text-sm font-medium text-gray-300">
-          Welcome, {user?.fullName || "User"}
-        </div>
-
         {/* Logout Button */}
         <Button
           variant="ghost"
@@ -61,3 +50,4 @@ export default function Header({ user }: HeaderProps) {
     </motion.header>
   );
 }
+
