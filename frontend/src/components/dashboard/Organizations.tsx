@@ -20,7 +20,7 @@ export default function Organizations() {
         {organizations.map((org, index) => (
           <motion.div
             key={org.id}
-            className="bg-gray-700 bg-opacity-50 backdrop-blur-lg rounded-lg shadow-lg p-6"
+            className="bg-[#303030] bg-opacity-50 backdrop-blur-lg rounded-lg shadow-lg p-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}

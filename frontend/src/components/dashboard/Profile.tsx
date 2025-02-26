@@ -10,7 +10,7 @@ export default function Profile() {
 
   return (
     <motion.div
-      className="bg-gray-700 bg-opacity-50 backdrop-blur-lg rounded-lg shadow-lg p-6 max-w-md mx-auto"
+      className="bg-[#303030] bg-opacity-50 backdrop-blur-lg rounded-lg shadow-lg p-6 max-w-md mx-auto"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
