@@ -7,61 +7,55 @@ import Sidebar from "./Sidebar";
 import Summary from "./Summary";
 import Organizations from "./Organizations";
 import Tasks from "./Tasks";
-import Profile from "./Profile";
 
 import { useAtom } from "jotai";
 import { userProfileAtom } from "@/atoms/authAtom";
+import { authAtom } from "@/atoms/pageAtom";
+import { toast } from "../hooks/use-toast";
 
-type View = "summary" | "organizations" | "tasks" | "profile";
+type View = "summary" | "organizations" | "tasks";
 
 export default function Dashboard() {
   const [view, setView] = useState<View>("summary");
   const [userProfile, setUserProfile] = useAtom(userProfileAtom);
+  const [auth] = useAtom(authAtom);
 
   // You can use userProfile.stats to display statistics
   // and userProfile.recentActivity to show recent activities
 
-  // Example: When fetching user data from API
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch('/api/user/profile');
-        const data = await response.json();
-
-        setUserProfile({
-          id: data.id,
-          fullName: data.fullName,
-          email: data.email,
-          createdAt: data.createdAt,
-          stats: {
-            totalOrganizations: data.stats.totalOrganizations,
-            totalTasks: data.stats.totalTasks,
-            pendingTasks: data.stats.pendingTasks,
-            completedTasks: data.stats.completedTasks,
-            inProgressTasks: data.stats.inProgressTasks,
-          },
-          recentActivity: data.recentActivity,
-        });
-      } catch (error) {
-        console.error("Failed to fetch user profile:", error);
+    const initializeUserProfile = () => {
+      if (auth.user) {
+        setUserProfile(prev => ({
+          ...prev,
+          id: auth.user.id,
+          fullName: auth.user.fullName,
+          email: auth.user.email,
+          createdAt: auth.user.createdAt,
+          stats: prev?.stats || {
+            totalOrganizations: 0,
+            totalTasks: 0,
+            pendingTasks: 0,
+            completedTasks: 0,
+            inProgressTasks: 0,
+          }
+        }));
       }
     };
 
-    fetchUserData();
-  }, [setUserProfile]);
+    initializeUserProfile();
+  }, [auth.user, setUserProfile]);
 
   const renderView = () => {
     switch (view) {
       case "summary":
-        return <Summary user={userProfile ?? { fullName: "User" }} />;
+        return <Summary user={auth.user || { fullName: "User" }} />;
       case "organizations":
         return <Organizations />;
       case "tasks":
         return <Tasks />;
-      case "profile":
-        return <Profile />;
       default:
-        return <Summary user={userProfile ?? { fullName: "User" }} />;
+        return <Summary user={auth.user || { fullName: "User" }} />;
     }
   };
 

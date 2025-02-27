@@ -1,4 +1,4 @@
-//frontend/src/components/use-toast.ts
+//frontend/src/components/hooks/use-toast.ts
 import { toast as sonnerToast } from "sonner";
 
 export function toast({

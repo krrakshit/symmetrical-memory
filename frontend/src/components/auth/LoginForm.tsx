@@ -17,9 +17,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { authAtom, pageAtom } from "@/atoms/pageAtom";
-import { loginAtom } from "@/atoms/authAtom";
-import api from "@/lib/axios";
+import { pageAtom } from "@/atoms/pageAtom";
+import { useAuth } from "@/hooks/useAuth";
 
 // ✅ Zod Schema for validation
 const LoginSchema = z.object({
@@ -28,43 +27,42 @@ const LoginSchema = z.object({
 });
 
 export function LoginForm() {
-  const [userData, setUserData] = useAtom(loginAtom)
-  const [, setWhichPage] = useAtom(pageAtom);
-  const [, setAuth] = useAtom(authAtom);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const [, setWhichPage] = useAtom(pageAtom);
 
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
-    defaultValues: userData,
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
 
   async function onSubmit(data: z.infer<typeof LoginSchema>) {
+    setIsLoading(true);
     try {
-      const response = await api.post("/auth/login", data);
-      const user = response.data; // Assuming response contains user data
-
-      // Update user state
-      setUserData(user);
-      setAuth({ isAuthenticated: true, user });
-
+      await login(data.email, data.password);
+      
       toast({
         title: "Login Successful!",
-        description: (
-          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-            <code className="text-white">{JSON.stringify(user, null, 2)}</code>
-          </pre>
-        ),
+        description: "Welcome back!",
+        type: "success"
       });
-    } catch (error) {
+
+    } catch (error: any) {
       console.error("Login failed:", error);
       toast({
         title: "Login Failed",
-        description: "Invalid email or password",
+        description: error.response?.data?.message || "Invalid email or password",
         type: "error"
       });
+      form.setValue("password", ""); // Clear password on error
+    } finally {
+      setIsLoading(false);
     }
   }
-
 
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -86,6 +84,7 @@ export function LoginForm() {
                       placeholder="you@example.com"
                       {...field}
                       className="bg-gray-800 text-white border-none focus:ring-2 focus:ring-blue-400 selection:bg-blue-600"
+                      disabled={isLoading}
                     />
                   </FormControl>
                   <FormMessage />
@@ -107,6 +106,7 @@ export function LoginForm() {
                         placeholder="Enter your password"
                         {...field}
                         className="bg-gray-800 text-white border-none focus:ring-2 focus:ring-blue-400 selection:bg-blue-600 pr-10 transition-all"
+                        disabled={isLoading}
                       />
                       <button
                         type="button"
@@ -122,8 +122,12 @@ export function LoginForm() {
               )}
             />
 
-            <Button type="submit" onClick={() => setWhichPage("Dashboard")} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded">
-              Login
+            <Button 
+              type="submit" 
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded"
+              disabled={isLoading}
+            >
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
 
             {/* Signup Link */}
@@ -133,6 +137,7 @@ export function LoginForm() {
                 type="button"
                 onClick={() => setWhichPage("Signup")}
                 className="text-blue-400 hover:underline"
+                disabled={isLoading}
               >
                 Sign up
               </button>

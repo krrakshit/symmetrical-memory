@@ -1,19 +1,16 @@
 //frontend/src/atoms/authAtom.ts
-import { atom } from "jotai";
 
-// Basic login state
-export const loginAtom = atom({}); // Default empty auth state
+import { atomWithStorage } from "jotai/utils";
 
-// Signup form state
-export const signupAtom = atom({
-  fullName: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
+// Authentication state atom with persistent storage
+export const authAtom = atomWithStorage("auth", {
+  isAuthenticated: false,
+  user: null,
+  token: null
 });
 
-// User profile details for display on home/summary page
-export const userProfileAtom = atom({
+// User profile details for display
+export const userProfileAtom = atomWithStorage("userProfile", {
   id: "",
   fullName: "",
   email: "",
@@ -32,4 +29,18 @@ export const userProfileAtom = atom({
     timestamp: string;
     status?: string;
   }[],
+});
+
+// Login form state
+export const loginAtom = atomWithStorage("loginForm", {
+  email: "",
+  password: ""
+});
+
+// Signup form state
+export const signupAtom = atomWithStorage("signupForm", {
+  fullName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
 });

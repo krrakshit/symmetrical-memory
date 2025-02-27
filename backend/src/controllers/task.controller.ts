@@ -70,7 +70,7 @@ export const createTask = async (
         title,
         description,
         orgId,
-        assignedTo,
+        assignedTo: assignedTo || undefined,
         createdBy: req.user!.id,
         dueAt: new Date(dueAt),
         status: "pending",

@@ -1,45 +1,50 @@
 //frontend/src/components/dashboard/Tasks.tsx
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { CheckCircle, Circle, Clock } from "lucide-react"
+import TaskList from "../tasks/TaskList"
+import { Task } from "@/services/task.service"
+import { getUserOrganizations } from "@/services/organization.service"
 
 export default function Tasks() {
-  const tasks = [
-    { id: "1", title: "Task 1", status: "completed", dueDate: "2025-03-15" },
-    { id: "2", title: "Task 2", status: "in-progress", dueDate: "2025-03-20" },
-    { id: "3", title: "Task 3", status: "pending", dueDate: "2025-03-25" },
-  ]
+  const [selectedOrg, setSelectedOrg] = useState<string | undefined>(undefined);
+  const [organizations, setOrganizations] = useState<any[]>([]);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-5 w-5 text-green-400" />
-      case "in-progress":
-        return <Clock className="h-5 w-5 text-yellow-400" />
-      default:
-        return <Circle className="h-5 w-5 text-gray-400" />
-    }
-  }
+  useEffect(() => {
+    const fetchOrgs = async () => {
+      try {
+        const orgs = await getUserOrganizations();
+        setOrganizations(orgs);
+      } catch (error) {
+        console.error("Failed to fetch organizations:", error);
+      }
+    };
+
+    fetchOrgs();
+  }, []);
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-100 mb-6">Tasks</h2>
-      <div className="space-y-4">
-        {tasks.map((task, index) => (
-          <motion.div
-            key={task.id}
-            className="bg-[#303030] bg-opacity-50 backdrop-blur-lg rounded-lg shadow-lg p-4 flex items-center justify-between"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <div className="flex items-center">
-              {getStatusIcon(task.status)}
-              <span className="ml-3 text-gray-100">{task.title}</span>
-            </div>
-            <span className="text-sm text-gray-300">Due: {task.dueDate}</span>
-          </motion.div>
-        ))}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-100 mb-4">Tasks</h2>
+        
+        {/* Organization Filter */}
+        <select
+          value={selectedOrg || ""}
+          onChange={(e) => setSelectedOrg(e.target.value || undefined)}
+          className="w-full sm:w-auto p-2 bg-[#212121] border border-[#404040] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+        >
+          <option value="">All Organizations</option>
+          {organizations.map((org) => (
+            <option key={org.id} value={org.id}>
+              {org.name}
+            </option>
+          ))}
+        </select>
       </div>
+
+      {/* Task List Component */}
+      <TaskList orgId={selectedOrg} />
     </div>
   )
 }
