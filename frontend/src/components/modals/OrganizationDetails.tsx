@@ -7,6 +7,8 @@ import { getOrganizationById, deleteOrganization, Organization } from "@/service
 import { getOrganizationMembers, updateMemberRole, removeMember, leaveOrganization } from "@/services/membership.service";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
+import { Copy } from "lucide-react";
+import Modal from "@/components/ui/Modal";
 
 interface OrganizationDetailsProps {
   orgId: string;
@@ -23,6 +25,7 @@ export default function OrganizationDetails({ orgId, onClose, onUpdate, onDelete
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [showInviteCode, setShowInviteCode] = useState(false);
   
   useEffect(() => {
     const fetchData = async () => {
@@ -57,7 +60,7 @@ export default function OrganizationDetails({ orgId, onClose, onUpdate, onDelete
   const isOwner = organization?.createdBy === user?.id;
   
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'member') => {
-    if (actionInProgress) return;
+    if (actionInProgress || !isOwner) return;
     
     setActionInProgress(true);
     try {
@@ -90,7 +93,7 @@ export default function OrganizationDetails({ orgId, onClose, onUpdate, onDelete
   };
   
   const handleRemoveMember = async (userId: string) => {
-    if (actionInProgress) return;
+    if (actionInProgress || !isOwner) return;
     
     setActionInProgress(true);
     try {
@@ -119,7 +122,7 @@ export default function OrganizationDetails({ orgId, onClose, onUpdate, onDelete
   };
   
   const handleLeaveOrganization = async () => {
-    if (actionInProgress) return;
+    if (actionInProgress || isOwner) return;
     
     setActionInProgress(true);
     try {
@@ -146,7 +149,7 @@ export default function OrganizationDetails({ orgId, onClose, onUpdate, onDelete
   };
   
   const handleDeleteOrganization = async () => {
-    if (actionInProgress) return;
+    if (actionInProgress || !isOwner) return;
     
     setActionInProgress(true);
     try {
@@ -173,9 +176,26 @@ export default function OrganizationDetails({ orgId, onClose, onUpdate, onDelete
     }
   };
   
+  const copyInviteCode = async () => {
+    try {
+      await navigator.clipboard.writeText(organization?.inviteCode || "");
+      toast({
+        title: "Success",
+        description: "Invite code copied to clipboard",
+        type: "success"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy invite code",
+        type: "error"
+      });
+    }
+  };
+  
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-10">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -262,6 +282,32 @@ export default function OrganizationDetails({ orgId, onClose, onUpdate, onDelete
         </div>
       </div>
 
+      {/* Invite Code Section */}
+      {organization.isOwner && (
+        <div className="mt-6">
+          <h3 className="text-xl font-semibold text-gray-100 mb-4">Invite Code</h3>
+          <div className="flex items-center space-x-2">
+            <code className="bg-[#303030] px-3 py-1 rounded text-white flex-1">
+              {showInviteCode ? organization.inviteCode : "••••••••••••"}
+            </code>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowInviteCode(!showInviteCode)}
+            >
+              {showInviteCode ? "Hide" : "Show"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyInviteCode}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex justify-end space-x-4 mt-6">
         <Button
@@ -271,6 +317,17 @@ export default function OrganizationDetails({ orgId, onClose, onUpdate, onDelete
         >
           Close
         </Button>
+        
+        {!isOwner && (
+          <Button
+            onClick={handleLeaveOrganization}
+            className="bg-red-600 hover:bg-red-700 text-white"
+            disabled={actionInProgress}
+          >
+            Leave Organization
+          </Button>
+        )}
+        
         {isOwner && (
           <Button
             onClick={() => setShowDeleteConfirm(true)}
@@ -282,32 +339,38 @@ export default function OrganizationDetails({ orgId, onClose, onUpdate, onDelete
         )}
       </div>
 
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="p-6 text-center">
-          <h3 className="text-lg font-medium text-white mb-4">
-            Are you sure you want to delete this organization?
-          </h3>
-          <p className="text-gray-400 mb-6">
-            This action cannot be undone. All tasks associated with this organization will also be deleted.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteConfirm(false)}
-              className="bg-transparent border-gray-500 text-gray-300 hover:bg-gray-700"
-              disabled={actionInProgress}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteOrganization}
-              className="bg-red-600 hover:bg-red-700 text-white"
-              disabled={actionInProgress}
-            >
-              {actionInProgress ? "Deleting..." : "Delete Organization"}
-            </Button>
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          title="Delete Organization"
+        >
+          <div className="p-6 text-center">
+            <h3 className="text-lg font-medium text-white mb-4">
+              Are you sure you want to delete this organization?
+            </h3>
+            <p className="text-gray-400 mb-6">
+              This action cannot be undone. All tasks and data will be permanently deleted.
+            </p>
+            <div className="flex justify-center space-x-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={actionInProgress}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDeleteOrganization}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={actionInProgress}
+              >
+                {actionInProgress ? "Deleting..." : "Delete Organization"}
+              </Button>
+            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

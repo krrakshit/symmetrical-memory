@@ -1,6 +1,7 @@
 // frontend/src/services/organization.service.ts
 
 import api from "@/lib/axios";
+import { Member } from "@/atoms/organizations";
 
 // Define types
 export interface Organization {
@@ -23,6 +24,7 @@ export interface Organization {
     fullName: string;
     email: string;
   };
+  members: Member[];
   _count?: {
     members: number;
     tasks: number;

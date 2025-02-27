@@ -1,149 +1,122 @@
 //frontend/src/components/auth/LoginForm.tsx
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { useAtom } from "jotai";
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
-
-import { toast } from "@/components/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useAtom } from "jotai";
 import { pageAtom } from "@/atoms/pageAtom";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/components/hooks/use-toast";
+import { Button } from "../ui/button";
+import Loader from "../loaders/loader";
 
-// ✅ Zod Schema for validation
 const LoginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setPage] = useAtom(pageAtom);
   const { login } = useAuth();
-  const [, setWhichPage] = useAtom(pageAtom);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof LoginSchema>>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
   });
 
   async function onSubmit(data: z.infer<typeof LoginSchema>) {
-    setIsLoading(true);
     try {
+      setIsLoading(true);
       await login(data.email, data.password);
-      
       toast({
-        title: "Login Successful!",
+        title: "Success",
         description: "Welcome back!",
-        type: "success"
+        type: "success",
       });
-
+      reset();
     } catch (error: any) {
-      console.error("Login failed:", error);
+      console.error("Login error:", error);
       toast({
-        title: "Login Failed",
+        title: "Error",
         description: error.response?.data?.message || "Invalid email or password",
-        type: "error"
+        type: "error",
       });
-      form.setValue("password", ""); // Clear password on error
     } finally {
       setIsLoading(false);
     }
   }
 
+  if (isLoading) {
+    return <Loader />;
+  }
+
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-[400px] p-8 rounded-lg border border-gray-300/30 
-                      bg-white/10 backdrop-blur-md shadow-lg shadow-blue-500/20">
-        <h2 className="text-2xl font-bold text-white text-center mb-6">Login</h2>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Email Field */}
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300">Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      {...field}
-                      className="bg-gray-800 text-white border-none focus:ring-2 focus:ring-blue-400 selection:bg-blue-600"
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <div className="flex min-h-screen items-center justify-center bg-[#09090B] px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-white">
+            Sign in to your account
+          </h2>
+        </div>
 
-            {/* Password Field */}
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300">Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
-                        {...field}
-                        className="bg-gray-800 text-white border-none focus:ring-2 focus:ring-blue-400 selection:bg-blue-600 pr-10 transition-all"
-                        disabled={isLoading}
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                      >
-                        {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-4 rounded-md">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+                Email address
+              </label>
+              <input
+                {...register("email")}
+                type="email"
+                className="mt-1 block w-full rounded-md border border-gray-600 bg-[#18181B] px-3 py-2 text-white placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                placeholder="you@example.com"
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
               )}
-            />
+            </div>
 
-            <Button 
-              type="submit" 
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded"
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+                Password
+              </label>
+              <input
+                {...register("password")}
+                type="password"
+                className="mt-1 block w-full rounded-md border border-gray-600 bg-[#18181B] px-3 py-2 text-white placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                placeholder="••••••••"
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Button
+              type="submit"
               disabled={isLoading}
+              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
+          </div>
 
-            {/* Signup Link */}
-            <p className="text-center text-gray-400 mt-4">
-              Don't have an account?{" "}
-              <button
-                type="button"
-                onClick={() => setWhichPage("Signup")}
-                className="text-blue-400 hover:underline"
-                disabled={isLoading}
-              >
-                Sign up
-              </button>
-            </p>
-          </form>
-        </Form>
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setPage("Signup")}
+              className="text-sm text-indigo-400 hover:text-indigo-300"
+            >
+              Don't have an account? Sign up
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

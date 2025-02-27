@@ -24,6 +24,11 @@ export interface AuthResponse {
   token: string;
 }
 
+// Helper function to dispatch auth state change event
+const dispatchAuthStateChange = () => {
+  window.dispatchEvent(new CustomEvent("auth:stateChanged"));
+};
+
 // Login user
 export const login = async (data: LoginData): Promise<AuthResponse> => {
   try {
@@ -33,6 +38,7 @@ export const login = async (data: LoginData): Promise<AuthResponse> => {
       localStorage.setItem("token", response.data.token);
       // Set the token in axios default headers
       api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+      dispatchAuthStateChange();
     }
     return response.data;
   } catch (error) {
@@ -45,6 +51,7 @@ export const login = async (data: LoginData): Promise<AuthResponse> => {
 export const signup = async (data: SignupData): Promise<AuthResponse> => {
   try {
     const response = await api.post<AuthResponse>("/auth/signup", data);
+    dispatchAuthStateChange();
     return response.data;
   } catch (error) {
     console.error("Signup failed:", error);
@@ -71,6 +78,7 @@ export const checkAuth = async () => {
   } catch (error) {
     localStorage.removeItem("token");
     delete api.defaults.headers.common['Authorization'];
+    dispatchAuthStateChange();
     return {
       isAuthenticated: false,
       user: null
@@ -86,5 +94,6 @@ export const logout = async (): Promise<void> => {
     // Always clear token and headers
     localStorage.removeItem("token");
     delete api.defaults.headers.common['Authorization'];
+    dispatchAuthStateChange();
   }
 };

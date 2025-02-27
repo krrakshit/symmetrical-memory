@@ -48,16 +48,11 @@ export default function TaskList({ orgId }: TaskListProps) {
         setTasks(fetchedTasks);
       } else {
         // If no orgId, we need to get tasks from all user's organizations
-        // First get all organizations the user is part of
-        const orgs = await getUserOrganizations();
-        
-        // Then fetch tasks for each organization and combine them
         const allTasks: Task[] = [];
-        for (const org of orgs) {
+        for (const org of organizations) {
           const orgTasks = await getTasks(org.id);
           allTasks.push(...orgTasks);
         }
-        
         setTasks(allTasks);
       }
     } catch (error) {
@@ -194,7 +189,7 @@ export default function TaskList({ orgId }: TaskListProps) {
         <h2 className="text-xl font-bold text-white">
           {orgId ? "Organization Tasks" : "My Tasks"}
         </h2>
-        {isOwner && (
+        {(isOwner || !orgId) && (
           <Button onClick={handleCreateTask}>Create Task</Button>
         )}
       </div>
@@ -316,7 +311,7 @@ export default function TaskList({ orgId }: TaskListProps) {
       {/* Task Form Modal */}
       {showTaskForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#171717] border border-[#333333] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden p-6">
+          <div className="bg-[#171717] border border-[#333333] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
             <h2 className="text-xl font-bold text-white mb-4">
               {editTask ? "Edit Task" : "Create New Task"}
             </h2>

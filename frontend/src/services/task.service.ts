@@ -7,7 +7,7 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
-  status: "pending" | "in-progress" | "completed";
+  status: "pending" | "in_progress" | "completed";
   orgId: string;
   assignedTo?: string;
   createdBy: string;
@@ -35,22 +35,15 @@ export interface CreateTaskData {
   orgId: string;
   assignedTo?: string;
   dueAt: string;
+  status: "pending" | "in_progress" | "completed";
 }
 
-// Get all tasks for an organization
-export const getTasks = async (
-  orgId: string,
-  filters?: { status?: string; assignedTo?: string }
-): Promise<Task[]> => {
+// Get tasks for an organization
+export const getTasks = async (orgId: string, filters?: { status?: string }): Promise<Task[]> => {
   try {
     let url = `/tasks/organization/${orgId}`;
-    if (filters) {
-      const params = new URLSearchParams();
-      if (filters.status) params.append("status", filters.status);
-      if (filters.assignedTo) params.append("assignedTo", filters.assignedTo);
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
+    if (filters?.status) {
+      url += `?status=${filters.status}`;
     }
     const response = await api.get(url);
     return response.data.tasks;
@@ -60,7 +53,7 @@ export const getTasks = async (
   }
 };
 
-// Get a single task by ID
+// Get task by ID
 export const getTaskById = async (taskId: string): Promise<Task> => {
   try {
     const response = await api.get(`/tasks/${taskId}`);
@@ -74,7 +67,13 @@ export const getTaskById = async (taskId: string): Promise<Task> => {
 // Create a new task
 export const createTask = async (taskData: CreateTaskData): Promise<Task> => {
   try {
-    const response = await api.post("/tasks", taskData);
+    // Ensure status is in the correct format
+    const formattedData = {
+      ...taskData,
+      status: taskData.status.replace("-", "_") as "pending" | "in_progress" | "completed"
+    };
+    
+    const response = await api.post("/tasks", formattedData);
     return response.data.task;
   } catch (error) {
     console.error("Error creating task:", error);
@@ -82,21 +81,20 @@ export const createTask = async (taskData: CreateTaskData): Promise<Task> => {
   }
 };
 
-// Update a task
-export const updateTask = async (
-  taskId: string,
-  updates: Partial<CreateTaskData>
-): Promise<Task> => {
+// Update task status
+export const updateTaskStatus = async (taskId: string, status: "pending" | "in_progress" | "completed"): Promise<Task> => {
   try {
-    const response = await api.put(`/tasks/${taskId}`, updates);
+    // Ensure status is in the correct format
+    const formattedStatus = status.replace("-", "_");
+    const response = await api.patch(`/tasks/${taskId}/status`, { status: formattedStatus });
     return response.data.task;
   } catch (error) {
-    console.error("Error updating task:", error);
+    console.error("Error updating task status:", error);
     throw error;
   }
 };
 
-// Delete a task
+// Delete task
 export const deleteTask = async (taskId: string): Promise<void> => {
   try {
     await api.delete(`/tasks/${taskId}`);
@@ -106,30 +104,19 @@ export const deleteTask = async (taskId: string): Promise<void> => {
   }
 };
 
-// Assign a task to a user
-export const assignTask = async (
-  taskId: string,
-  assignedTo: string | null
-): Promise<Task> => {
+// Update task
+export const updateTask = async (taskId: string, taskData: Partial<CreateTaskData>): Promise<Task> => {
   try {
-    const response = await api.post(`/tasks/${taskId}/assign`, { assignedTo });
+    // Ensure status is in the correct format if it's being updated
+    const formattedData = {
+      ...taskData,
+      status: taskData.status ? taskData.status.replace("-", "_") as "pending" | "in_progress" | "completed" : undefined
+    };
+    
+    const response = await api.put(`/tasks/${taskId}`, formattedData);
     return response.data.task;
   } catch (error) {
-    console.error("Error assigning task:", error);
-    throw error;
-  }
-};
-
-// Update task status
-export const updateTaskStatus = async (
-  taskId: string,
-  status: "pending" | "in-progress" | "completed"
-): Promise<Task> => {
-  try {
-    const response = await api.patch(`/tasks/${taskId}/status`, { status });
-    return response.data.task;
-  } catch (error) {
-    console.error("Error updating task status:", error);
+    console.error("Error updating task:", error);
     throw error;
   }
 };

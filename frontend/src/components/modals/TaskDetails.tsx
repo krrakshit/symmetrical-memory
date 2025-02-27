@@ -206,10 +206,12 @@ export default function TaskDetails({ taskId, onClose, onUpdate, onDelete }: Tas
               </select>
             </div>
             
-            <div>
-              <h3 className="text-sm font-medium text-gray-400 mb-1">Assigned To</h3>
-              <p className="text-white">{task.assignee?.fullName || "Unassigned"}</p>
-            </div>
+            {isOwner && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-400 mb-1">Assigned To</h3>
+                <p className="text-white">{task.assignee?.fullName || "Unassigned"}</p>
+              </div>
+            )}
             
             <div>
               <h3 className="text-sm font-medium text-gray-400 mb-1">Organization</h3>
@@ -234,15 +236,17 @@ export default function TaskDetails({ taskId, onClose, onUpdate, onDelete }: Tas
             </div>
           </div>
           
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="bg-red-600 hover:bg-red-700 text-white"
-              disabled={updating}
-            >
-              Delete Task
-            </Button>
-          </div>
+          {isOwner && (
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={updating}
+              >
+                Delete Task
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

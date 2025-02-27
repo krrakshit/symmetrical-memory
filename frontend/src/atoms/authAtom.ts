@@ -7,6 +7,34 @@ export const authAtom = atomWithStorage("auth", {
   isAuthenticated: false,
   user: null,
   token: null
+}, {
+  getItem: (key, initialValue) => {
+    const storedValue = localStorage.getItem(key);
+    if (storedValue) {
+      const parsed = JSON.parse(storedValue);
+      // Store userId separately for easier access
+      if (parsed.user?.id) {
+        localStorage.setItem("userId", parsed.user.id);
+      } else {
+        localStorage.removeItem("userId");
+      }
+      return parsed;
+    }
+    return initialValue;
+  },
+  setItem: (key, value) => {
+    localStorage.setItem(key, JSON.stringify(value));
+    // Store userId separately for easier access
+    if (value.user?.id) {
+      localStorage.setItem("userId", value.user.id);
+    } else {
+      localStorage.removeItem("userId");
+    }
+  },
+  removeItem: (key) => {
+    localStorage.removeItem(key);
+    localStorage.removeItem("userId");
+  },
 });
 
 // User profile details for display

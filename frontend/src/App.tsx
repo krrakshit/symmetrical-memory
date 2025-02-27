@@ -12,54 +12,34 @@ import { useAuth } from "./hooks/useAuth"
 const App = () => {
   const [whichPage, setWhichPage] = useAtom(pageAtom);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { checkAuth } = useAuth();
   const [auth] = useAtom(authAtom);
 
+  // Initial auth check
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const authResult = await checkAuth();
-        if (!authResult.isAuthenticated && whichPage === "Dashboard") {
-          setWhichPage("Login");
-        } else if (authResult.isAuthenticated && whichPage === "Login") {
-          setWhichPage("Dashboard");
-        }
+        setIsLoading(true);
+        await checkAuth();
       } finally {
         setIsHydrated(true);
+        setIsLoading(false);
       }
     };
     initAuth();
-  }, []);
+  }, [checkAuth]);
 
-  // Listen for unauthorized events
-  useEffect(() => {
-    const handleUnauthorized = () => {
-      setWhichPage("Login");
-    };
-
-    window.addEventListener("auth:unauthorized", handleUnauthorized);
-    return () => {
-      window.removeEventListener("auth:unauthorized", handleUnauthorized);
-    };
-  }, [setWhichPage]);
-
-  if (!isHydrated) {
+  if (!isHydrated || isLoading) {
     return <Loader />;
   }
 
+  // Determine which component to show based on auth state and current page
   let PageComponent;
-  switch (whichPage) {
-    case "Login":
-      PageComponent = auth.isAuthenticated ? <Dashboard /> : <LoginForm />;
-      break;
-    case "Signup":
-      PageComponent = auth.isAuthenticated ? <Dashboard /> : <SignupForm />;
-      break;
-    case "Dashboard":
-      PageComponent = auth.isAuthenticated ? <Dashboard /> : <LoginForm />;
-      break;
-    default:
-      PageComponent = auth.isAuthenticated ? <Dashboard /> : <LoginForm />;
+  if (auth.isAuthenticated) {
+    PageComponent = <Dashboard />;
+  } else {
+    PageComponent = whichPage === "Signup" ? <SignupForm /> : <LoginForm />;
   }
 
   return (

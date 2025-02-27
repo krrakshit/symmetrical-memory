@@ -6,11 +6,15 @@ import { userProfileAtom } from "@/atoms/authAtom"
 import { authAtom } from "@/atoms/pageAtom"
 import { useState } from "react"
 import { toast } from "../hooks/use-toast"
+import Modal from "../ui/Modal"
+import api from "@/lib/axios"
 
 export default function Profile() {
   const [userProfile] = useAtom(userProfileAtom);
-  const [auth] = useAtom(authAtom);
+  const [auth, setAuth] = useAtom(authAtom);
   const [isEditing, setIsEditing] = useState(false);
+  const [newName, setNewName] = useState(auth.user?.fullName || "");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -22,19 +26,44 @@ export default function Profile() {
   };
 
   const handleUpdateProfile = async () => {
+    if (!newName.trim()) {
+      toast({
+        title: "Error",
+        description: "Name cannot be empty",
+        type: "error"
+      });
+      return;
+    }
+
+    setIsUpdating(true);
     try {
-      // Implement profile update logic
+      const response = await api.put("/users/profile", {
+        fullName: newName
+      });
+
+      // Update auth state with new name
+      setAuth(prev => ({
+        ...prev,
+        user: {
+          ...prev.user,
+          fullName: newName
+        }
+      }));
+
+      setIsEditing(false);
       toast({
         title: "Success",
         description: "Profile updated successfully",
         type: "success"
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update profile",
+        description: error.response?.data?.message || "Failed to update profile",
         type: "error"
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -49,7 +78,38 @@ export default function Profile() {
       <div className="space-y-4">
         <div>
           <label className="text-sm text-gray-300">Full Name</label>
-          <p className="text-lg font-medium text-gray-100">{auth.user?.fullName || 'N/A'}</p>
+          {isEditing ? (
+            <div className="mt-1">
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full p-2 bg-[#404040] border border-gray-600 rounded text-white focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your name"
+              />
+              <div className="mt-2 flex space-x-2">
+                <Button
+                  onClick={handleUpdateProfile}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? "Updating..." : "Save"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setNewName(auth.user?.fullName || "");
+                  }}
+                  disabled={isUpdating}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-lg font-medium text-gray-100">{auth.user?.fullName || 'N/A'}</p>
+          )}
         </div>
         <div>
           <label className="text-sm text-gray-300">Email</label>
@@ -83,12 +143,14 @@ export default function Profile() {
           </div>
         </div>
       </div>
-      <Button 
-        className="mt-6 w-full bg-blue-600 hover:bg-blue-700"
-        onClick={() => setIsEditing(true)}
-      >
-        Edit Profile
-      </Button>
+      {!isEditing && (
+        <Button 
+          className="mt-6 w-full bg-blue-600 hover:bg-blue-700"
+          onClick={() => setIsEditing(true)}
+        >
+          Edit Profile
+        </Button>
+      )}
     </motion.div>
   );
 }
