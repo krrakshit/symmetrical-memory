@@ -17,7 +17,7 @@ model User {
   organizations Organization[] @relation("UserOrganizations") // Organizations created by user
   memberships   Membership[]   @relation("UserMemberships") // Organizations user has joined
   tasks         Task[]         @relation("AssignedTasks") // Tasks assigned to user
-  Task          Task[]
+  createdTasks  Task[]        // Tasks created by user
 }
 
 model Organization {

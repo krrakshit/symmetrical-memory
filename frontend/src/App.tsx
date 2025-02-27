@@ -2,41 +2,48 @@
 import { Toaster } from "sonner"
 import { LoginForm } from "./components/auth/LoginForm"
 import { useAtom } from "jotai"
-import { pageAtom } from "./atoms/pageAtom"
+import { pageAtom, authAtom } from "./atoms/pageAtom"
 import { SignupForm } from "./components/auth/SignupForm"
 import Dashboard from "./components/dashboard/Dashboard"
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"
 import Loader from "./components/loaders/loader"
+import { useAuth } from "./hooks/useAuth"
 
 const App = () => {
-  const [whichPage] = useAtom(pageAtom);
+  const [whichPage, setWhichPage] = useAtom(pageAtom);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { checkAuth } = useAuth();
+  const [auth] = useAtom(authAtom);
 
+  // Initial auth check
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+    const initAuth = async () => {
+      try {
+        setIsLoading(true);
+        await checkAuth();
+      } finally {
+        setIsHydrated(true);
+        setIsLoading(false);
+      }
+    };
+    initAuth();
+  }, [checkAuth]);
 
-  if (!isHydrated) {
-    return <Loader />; // Or show a loading spinner
+  if (!isHydrated || isLoading) {
+    return <Loader />;
   }
 
+  // Determine which component to show based on auth state and current page
   let PageComponent;
-  switch (whichPage) {
-    case "Login":
-      PageComponent = <LoginForm />;
-      break;
-    case "Signup":
-      PageComponent = <SignupForm />;
-      break;
-    case "Dashboard":
-      PageComponent = <Dashboard />;
-      break;
-    default:
-      PageComponent = <LoginForm />;
+  if (auth.isAuthenticated) {
+    PageComponent = <Dashboard />;
+  } else {
+    PageComponent = whichPage === "Signup" ? <SignupForm /> : <LoginForm />;
   }
 
   return (
-    <div className="bg-[#09090B]">
+    <div className="bg-[#09090B] min-h-screen">
       <Toaster position="top-center" />
       {PageComponent}
     </div>

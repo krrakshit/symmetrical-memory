@@ -49,6 +49,26 @@ export const getOrganizations = async (
       where: {
         createdBy: req.user!.id,
       },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Get organizations where the user is a member
@@ -57,24 +77,89 @@ export const getOrganizations = async (
         userId: req.user!.id,
       },
       include: {
-        org: true, // Changed from organization to org to match schema relation name
+        org: {
+          include: {
+            owner: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+            members: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
     const memberOrganizations = memberships.map((m) => ({
-      ...m.org, // Changed from m.organization to m.org
+      ...m.org,
       joinedAt: m.joinedAt,
     }));
 
-    // Combine both lists and mark ownership
+    // Combine both lists with owner details and members
     const allOrganizations = [
       ...ownedOrganizations.map((org) => ({
         ...org,
-        isOwner: true,
+        owner: {
+          id: org.owner.id,
+          fullName: org.owner.fullName,
+          email: org.owner.email,
+        },
+        members: [
+          // Include owner as a member
+          {
+            id: org.owner.id,
+            fullName: org.owner.fullName,
+            email: org.owner.email,
+            isOwner: true,
+            joinedAt: org.createdAt,
+          },
+          // Include other members
+          ...org.members.map(membership => ({
+            id: membership.user.id,
+            fullName: membership.user.fullName,
+            email: membership.user.email,
+            isOwner: false,
+            joinedAt: membership.joinedAt,
+          })),
+        ],
       })),
       ...memberOrganizations.map((org) => ({
         ...org,
-        isOwner: false,
+        owner: {
+          id: org.owner.id,
+          fullName: org.owner.fullName,
+          email: org.owner.email,
+        },
+        members: [
+          // Include owner as a member
+          {
+            id: org.owner.id,
+            fullName: org.owner.fullName,
+            email: org.owner.email,
+            isOwner: true,
+            joinedAt: org.createdAt,
+          },
+          // Include other members
+          ...org.members.map(membership => ({
+            id: membership.user.id,
+            fullName: membership.user.fullName,
+            email: membership.user.email,
+            isOwner: false,
+            joinedAt: membership.joinedAt,
+          })),
+        ],
       })),
     ];
 

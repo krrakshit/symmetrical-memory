@@ -1,5 +1,5 @@
 //frontend/src/components/dashboard/Sidebar.tsx
-import { Home, Users, CheckSquare, User } from "lucide-react";
+import { Home, Users, CheckSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 
@@ -8,7 +8,7 @@ interface SidebarProps {
   currentView: View;
 }
 
-type View = "summary" | "organizations" | "tasks" | "profile";
+type View = "summary" | "organizations" | "tasks";
 
 interface MenuItem {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
@@ -18,10 +18,9 @@ interface MenuItem {
 
 export default function Sidebar({ setView, currentView }: SidebarProps) {
   const menuItems: MenuItem[] = [
-    { icon: Home, label: "Home", view: "summary" }, // Changed label from "Summary" to "Home"
+    { icon: Home, label: "Home", view: "summary" },
     { icon: Users, label: "Organizations", view: "organizations" },
     { icon: CheckSquare, label: "Tasks", view: "tasks" },
-    { icon: User, label: "Profile", view: "profile" },
   ];
 
   return (

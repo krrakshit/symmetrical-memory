@@ -1,19 +1,44 @@
 //frontend/src/atoms/authAtom.ts
-import { atom } from "jotai";
 
-// Basic login state
-export const loginAtom = atom({}); // Default empty auth state
+import { atomWithStorage } from "jotai/utils";
 
-// Signup form state
-export const signupAtom = atom({
-  fullName: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
+// Authentication state atom with persistent storage
+export const authAtom = atomWithStorage("auth", {
+  isAuthenticated: false,
+  user: null,
+  token: null
+}, {
+  getItem: (key, initialValue) => {
+    const storedValue = localStorage.getItem(key);
+    if (storedValue) {
+      const parsed = JSON.parse(storedValue);
+      // Store userId separately for easier access
+      if (parsed.user?.id) {
+        localStorage.setItem("userId", parsed.user.id);
+      } else {
+        localStorage.removeItem("userId");
+      }
+      return parsed;
+    }
+    return initialValue;
+  },
+  setItem: (key, value) => {
+    localStorage.setItem(key, JSON.stringify(value));
+    // Store userId separately for easier access
+    if (value.user?.id) {
+      localStorage.setItem("userId", value.user.id);
+    } else {
+      localStorage.removeItem("userId");
+    }
+  },
+  removeItem: (key) => {
+    localStorage.removeItem(key);
+    localStorage.removeItem("userId");
+  },
 });
 
-// User profile details for display on home/summary page
-export const userProfileAtom = atom({
+// User profile details for display
+export const userProfileAtom = atomWithStorage("userProfile", {
   id: "",
   fullName: "",
   email: "",
@@ -32,4 +57,18 @@ export const userProfileAtom = atom({
     timestamp: string;
     status?: string;
   }[],
+});
+
+// Login form state
+export const loginAtom = atomWithStorage("loginForm", {
+  email: "",
+  password: ""
+});
+
+// Signup form state
+export const signupAtom = atomWithStorage("signupForm", {
+  fullName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
 });
