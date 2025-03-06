@@ -1,52 +1,42 @@
-# Zenith
+TaskSphere
 
-A modern web application with a React frontend and a backend API.
+TaskSphere is a task management web application where users can register as individuals or through an organization. Users can create organizations, assign tasks within them, and track progress seamlessly.
 
-## Overview
+🚀 Features
 
-This project is a full-stack application that uses React for the frontend and communicates with a backend API. It includes a robust authentication system and error handling.
+User Registration: Sign up as an individual or via an organization.
 
-## Features
+Organization Management: Create and manage multiple organizations.
 
-- User authentication with JWT tokens
-- Secure API communication
-- Toast notifications for user feedback
-- Error handling for common HTTP status codes
-- TypeScript support for type safety
+Task Assignment: Assign tasks to users within an organization.
 
-## Project Structure
+Task Tracking: Users can view tasks assigned to them along with the assigning organization.
 
-The project is organized into frontend and backend components:
+Collaborative Workflow: Streamline task management within organizations.
 
-### Frontend
+🛠 Tech Stack
 
-- Built with React and TypeScript
-- Uses Axios for API communication
-- Includes toast notifications for user feedback
+Frontend: Next.js, TypeScript, Tailwind CSS
 
-### Backend
+Backend: Node.js, Express.js
 
-- RESTful API endpoints
-- Authentication and authorization
-- Running on port 3000
+Database: PostgreSQL (with Prisma ORM)
 
-## Getting Started
+Authentication: JWT-based authentication
 
-### Prerequisites
+📦 Installation
 
+Clone the repository:
+
+git clone https://github.com/PITIFULHAWK/symmetrical-memory
+cd TaskSphere
+
+Prerequisites
 - Node.js (v14 or higher recommended)
 - bun
 
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/PITIFULHAWK/symmetrical-memory
-   cd symmetrical-memory
-   ```
-
-2. Install dependencies:
-   ```bash
+Install Dependencies
+```bash
    # Install frontend dependencies
    cd frontend
    bun install
@@ -56,8 +46,13 @@ The project is organized into frontend and backend components:
    bun install
    ```
 
-3. Start the development servers:
-   ```bash
+Set up environment variables:
+
+DATABASE_URL=your_database_url
+JWT_SECRET=your_jwt_secret
+
+Start the development servers:
+ ```bash
    # Start backend server
    cd backend
    bun run index.ts
@@ -67,39 +62,32 @@ The project is organized into frontend and backend components:
    bun run dev
    ```
 
-## API Communication
 
-The frontend communicates with the backend using Axios. The API service is configured to:
+🏗️ Roadmap
 
-- Send authentication tokens with each request
-- Handle common error responses (401, 403, 500)
-- Provide convenient methods for API calls (get, post, put, delete, patch)
+✅ Basic user authentication (Signup/Login)
 
-## Authentication
+✅ Organization creation and management
 
-The application uses JWT token-based authentication:
+✅ Task assignment within organizations
 
-- Tokens are stored in localStorage
-- Tokens are automatically included in API requests
-- Session expiration is handled with user notifications
-- Unauthorized access redirects to the login page
+✅ Users can view tasks assigned to them
 
-## Error Handling
+🔄 Role-based access control (Admins, Managers, Employees)
 
-The application includes comprehensive error handling:
+🔄 Task prioritization & deadlines
 
-- 401 Unauthorized: Clears auth state and redirects to login
-- 403 Forbidden: Displays access denied message
-- 500 Server Error: Displays server error message
+🔄 Notifications & Reminders
 
-## Contributing
+🔄 API for external integrations
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+🔄 Mobile-friendly UI improvements
 
-## License
+🤝 Contributing
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+Contributions are welcome! Feel free to open an issue or submit a pull request.
+
+📜 License
+
+This project is licensed under the MIT License.
+
