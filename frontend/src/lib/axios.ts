@@ -4,7 +4,7 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { toast } from "@/components/hooks/use-toast";
 
 const api = axios.create({
-  baseURL: "http://localhost:3000/api", // Your existing backend URL
+  baseURL: "http://52.66.237.233:5000/api", // Your existing backend URL
   withCredentials: true, // Ensures cookies are sent
   headers: {
     "Content-Type": "application/json",
